@@ -1,30 +1,51 @@
-Markdown
-# 🏦 Ứng dụng Thẩm định Tín dụng Khách hàng Cá nhân
+Python
+import streamlit as st
+import plotly.express as px
+import pandas as pd
 
-Dự án này là một công cụ hỗ trợ thẩm định cho vay dành cho khách hàng cá nhân, được phát triển nhằm mục tiêu tối ưu hóa quy trình ra quyết định tín dụng. Sản phẩm được thực hiện bởi nhóm sinh viên trường **Đại học Tài chính - Marketing (UFM)**.
+st.set_page_config(page_title="Fintech Credit App", layout="wide")
 
-## 🚀 Tính năng nổi bật
-* **Thẩm định tự động**: Tính toán nhanh các chỉ số quan trọng như DTI (Debt-to-Income), khả năng trả nợ và rủi ro tài chính.
-* **Giao diện trực quan**: Sử dụng Streamlit để tạo trải nghiệm người dùng hiện đại, dễ thao tác và hiển thị kết quả trực quan bằng bảng biểu.
-* **Đánh giá rủi ro**: Hệ thống tự động phân loại hồ sơ (Thấp - Trung bình - Cao) dựa trên dữ liệu đầu vào.
-* **Hỗ trợ xuất báo cáo**: Cung cấp kết quả thẩm định nhanh chóng để hỗ trợ cán bộ tín dụng.
+# Tùy chỉnh CSS để làm thẻ đẹp hơn
+st.markdown("""
+    <style>
+    .stMetric {background-color: #f0f2f6; padding: 15px; border-radius: 10px;}
+    </style>
+    """, unsafe_allow_html=True)
 
-## 🛠 Công nghệ sử dụng
-* **Ngôn ngữ**: Python
-* **Framework**: [Streamlit](https://streamlit.io/)
-* **Xử lý dữ liệu**: Pandas
-* **Quản lý & Triển khai**: Git, GitHub & Streamlit Community Cloud
+st.title("🏦 Hệ thống Thẩm định Tín dụng Cá nhân")
 
-## 📋 Hướng dẫn sử dụng
-1. Truy cập ứng dụng tại: [DÁN ĐƯỜNG LINK ỨNG DỤNG CỦA BẠN TẠI ĐÂY]
-2. Tại thanh **Sidebar** bên trái, nhập các thông tin:
-   - Tên khách hàng.
-   - Số tiền vay, thu nhập hàng tháng.
-   - Dư nợ cũ, số người phụ thuộc.
-3. Nhấn nút **"Thẩm định ngay"** để xem kết quả phân tích.
+# Sidebar để nhập liệu
+with st.sidebar:
+    st.header("📋 Nhập thông tin khách hàng")
+    amount = st.slider("Số tiền vay (triệu VNĐ)", 10, 2000, 500)
+    income = st.number_input("Thu nhập hàng tháng (triệu VNĐ)", 10.0)
+    debt = st.number_input("Dư nợ cũ (triệu VNĐ)", 0.0)
+    term = st.selectbox("Thời hạn vay (tháng)", [12, 24, 36, 60])
 
-## ⚖️ Cơ sở pháp lý
-Ứng dụng được xây dựng dựa trên các chuẩn mực nghiệp vụ ngân hàng và các quy định hiện hành về cho vay khách hàng cá nhân tại Việt Nam.
+# Tính toán các chỉ số
+monthly_payment = (amount / term) + (amount * 0.008) # Giả định lãi suất 0.8%/tháng
+dti = ((monthly_payment + debt) / income) * 100 if income > 0 else 0
+Python
+# Hiển thị số liệu quan trọng bằng Metrics
+col1, col2, col3 = st.columns(3)
+col1.metric("Số tiền vay", f"{amount} tr")
+col2.metric("DTI (Tỷ lệ nợ)", f"{dti:.1f}%")
+col3.metric("Trạng thái", "Đạt" if dti < 40 else "Rủi ro")
 
----
-*Dự án môn học - Trường Đại học Tài chính - Marketing (UFM)*
+# Biểu đồ phân tích
+st.subheader("📊 Biểu đồ phân tích tài chính")
+data = pd.DataFrame({
+    'Loại': ['Thu nhập', 'Khoản vay', 'Dư nợ cũ'],
+    'Giá trị': [income, amount/term, debt]
+})
+fig = px.pie(data, values='Giá trị', names='Loại', hole=0.4, color_discrete_sequence=px.colors.sequential.RdBu)
+st.plotly_chart(fig, use_container_width=True)
+Python
+st.subheader("⚠️ Stress Test: Nếu lãi suất tăng 2%")
+if st.button("Kiểm tra rủi ro"):
+    new_dti = (((amount / term) + (amount * 0.01)) + debt) / income * 100
+    st.warning(f"DTI khi lãi suất tăng: {new_dti:.2f}%")
+    if new_dti > 50:
+        st.error("Khách hàng không chịu được cú sốc lãi suất!")
+    else:
+        st.success("Hồ sơ vẫn an toàn trước rủi ro lãi suất.")
