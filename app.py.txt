@@ -1,0 +1,51 @@
+Python
+import streamlit as st
+import plotly.express as px
+import pandas as pd
+
+st.set_page_config(page_title="Fintech Credit App", layout="wide")
+
+# Tùy chỉnh CSS để làm thẻ đẹp hơn
+st.markdown("""
+    <style>
+    .stMetric {background-color: #f0f2f6; padding: 15px; border-radius: 10px;}
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🏦 Hệ thống Thẩm định Tín dụng Cá nhân")
+
+# Sidebar để nhập liệu
+with st.sidebar:
+    st.header("📋 Nhập thông tin khách hàng")
+    amount = st.slider("Số tiền vay (triệu VNĐ)", 10, 2000, 500)
+    income = st.number_input("Thu nhập hàng tháng (triệu VNĐ)", 10.0)
+    debt = st.number_input("Dư nợ cũ (triệu VNĐ)", 0.0)
+    term = st.selectbox("Thời hạn vay (tháng)", [12, 24, 36, 60])
+
+# Tính toán các chỉ số
+monthly_payment = (amount / term) + (amount * 0.008) # Giả định lãi suất 0.8%/tháng
+dti = ((monthly_payment + debt) / income) * 100 if income > 0 else 0
+Python
+# Hiển thị số liệu quan trọng bằng Metrics
+col1, col2, col3 = st.columns(3)
+col1.metric("Số tiền vay", f"{amount} tr")
+col2.metric("DTI (Tỷ lệ nợ)", f"{dti:.1f}%")
+col3.metric("Trạng thái", "Đạt" if dti < 40 else "Rủi ro")
+
+# Biểu đồ phân tích
+st.subheader("📊 Biểu đồ phân tích tài chính")
+data = pd.DataFrame({
+    'Loại': ['Thu nhập', 'Khoản vay', 'Dư nợ cũ'],
+    'Giá trị': [income, amount/term, debt]
+})
+fig = px.pie(data, values='Giá trị', names='Loại', hole=0.4, color_discrete_sequence=px.colors.sequential.RdBu)
+st.plotly_chart(fig, use_container_width=True)
+Python
+st.subheader("⚠️ Stress Test: Nếu lãi suất tăng 2%")
+if st.button("Kiểm tra rủi ro"):
+    new_dti = (((amount / term) + (amount * 0.01)) + debt) / income * 100
+    st.warning(f"DTI khi lãi suất tăng: {new_dti:.2f}%")
+    if new_dti > 50:
+        st.error("Khách hàng không chịu được cú sốc lãi suất!")
+    else:
+        st.success("Hồ sơ vẫn an toàn trước rủi ro lãi suất.")
